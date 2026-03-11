@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/rest/api/auth") // SecurityConfig'de buraya permitAll() verdik kanka
+@RequestMapping("/rest/api/auth")
 @RequiredArgsConstructor
 public class AuthController extends RestBaseController {
 
