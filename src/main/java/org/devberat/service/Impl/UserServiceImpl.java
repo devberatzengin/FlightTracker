@@ -2,6 +2,11 @@ package org.devberat.service.Impl;
 
 import org.devberat.DTO.CreateUserRequest;
 import org.devberat.DTO.CreateUserResponse;
+import org.devberat.DTO.InActiveUserRequest;
+import org.devberat.DTO.InActiveUserResponse;
+import org.devberat.exception.BaseException;
+import org.devberat.exception.ErrorMessage;
+import org.devberat.exception.MessageType;
 import org.devberat.model.User;
 import org.devberat.repository.IUserRepository;
 import org.devberat.service.IUserService;
@@ -9,11 +14,22 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements IUserService {
+
     @Autowired
     private IUserRepository userRepository;
+
+    private Long findUserByEmail(String userEmail){
+        if (userEmail == null) {
+            return null;
+        }
+        return userRepository.findByEmail(userEmail)
+                .map(User::getId)
+                .orElse(null);
+    }
 
     @Override
     public CreateUserResponse saveUser(CreateUserRequest request) {
@@ -29,6 +45,29 @@ public class UserServiceImpl implements IUserService {
         if (databaseResult.getId() != null) {
             BeanUtils.copyProperties(databaseResult, response);
         }
+        return response;
+    }
+
+    @Override
+    public InActiveUserResponse inActiveUser(InActiveUserRequest request){
+
+        //Find User
+        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
+
+        // İf not found throw exception
+        if (optionalUser.isEmpty()) {
+            throw new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, request.getEmail()));
+        }
+
+
+        User dbUser = optionalUser.get();
+        dbUser.setActive(false);
+        dbUser.setUpdatedAt(new Date());
+        userRepository.save(dbUser);
+
+        InActiveUserResponse response = new InActiveUserResponse();
+        BeanUtils.copyProperties(dbUser, response);
+
         return response;
     }
 }
