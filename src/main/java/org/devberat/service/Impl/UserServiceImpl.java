@@ -1,9 +1,6 @@
 package org.devberat.service.Impl;
 
-import org.devberat.DTO.CreateUserRequest;
-import org.devberat.DTO.CreateUserResponse;
-import org.devberat.DTO.InActiveUserRequest;
-import org.devberat.DTO.InActiveUserResponse;
+import org.devberat.DTO.*;
 import org.devberat.exception.BaseException;
 import org.devberat.exception.ErrorMessage;
 import org.devberat.exception.MessageType;
@@ -45,6 +42,27 @@ public class UserServiceImpl implements IUserService {
         if (databaseResult.getId() != null) {
             BeanUtils.copyProperties(databaseResult, response);
         }
+        return response;
+    }
+
+
+    @Override
+    public ActivateUserResponse activateUser(ActivateUserRequest request) {
+        Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
+
+        if (optionalUser.isEmpty()) {
+            throw new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, request.getEmail()));
+        }
+
+        User dbUser = optionalUser.get();
+        dbUser.setActive(true);
+        dbUser.setUpdatedAt(new Date());
+
+        userRepository.save(dbUser);
+
+        ActivateUserResponse response = new ActivateUserResponse();
+        BeanUtils.copyProperties(dbUser, response);
+
         return response;
     }
 
