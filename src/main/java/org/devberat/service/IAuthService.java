@@ -1,4 +1,8 @@
 package org.devberat.service;
 
-public class IAuthService {
+import org.devberat.DTO.AuthRequest;
+import org.devberat.DTO.AuthResponse;
+
+public interface IAuthService {
+    AuthResponse login(AuthRequest request);
 }
