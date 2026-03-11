@@ -9,6 +9,9 @@ import org.devberat.repository.IUserRepository;
 import org.devberat.service.IUserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Date;
@@ -23,6 +26,17 @@ public class UserServiceImpl implements IUserService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    private UserDto convertToDto(User user) {
+        return UserDto.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .userType(user.getUserType().name()) // Enum'ı String'e çevirdik
+                .build();
+    }
 
     private UUID findUserByEmail(String userEmail){
         if (userEmail == null) {
@@ -94,5 +108,16 @@ public class UserServiceImpl implements IUserService {
         BeanUtils.copyProperties(dbUser, response);
 
         return response;
+    }
+
+
+    @Override
+    public UserDto getMyProfile() {
+        // SecurityContext içinden o anki giriş yapmış kullanıcıyı alıyoruz
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+
+        return convertToDto(currentUser);
+
     }
 }

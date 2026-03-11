@@ -9,4 +9,7 @@ public interface IUserService {
     InActiveUserResponse inActiveUser(InActiveUserRequest request);
 
     ActivateUserResponse activateUser(ActivateUserRequest request);
+
+    UserDto getMyProfile();
+
 }
