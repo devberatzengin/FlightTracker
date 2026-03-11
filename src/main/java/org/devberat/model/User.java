@@ -4,14 +4,22 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.NullMarked;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
 @Table(name = "user")
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class User implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,4 +51,49 @@ public class User {
 
     @Column(name = "updated_at")
     private Date updatedAt;
+
+    //UserDetails Methods
+
+    @Override
+    @NullMarked
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        //Appending to authorities List
+        return List.of(new SimpleGrantedAuthority(userType.name()));
+    }
+
+    @Override
+    @NullMarked
+    public String getUsername() {
+        // means (username == email)
+        return email;
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        // Account can not expire. For now :)
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        //Account con not lock. also for now this too.
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        // Password can not expire.
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        // If user active then can log in.
+        return isActive;
+    }
 }
