@@ -5,6 +5,7 @@ import org.devberat.exception.BaseException;
 import org.devberat.exception.ErrorMessage;
 import org.devberat.exception.MessageType;
 import org.devberat.model.User;
+import org.devberat.model.UserType;
 import org.devberat.repository.IUserRepository;
 import org.devberat.service.IUserService;
 import org.springframework.beans.BeanUtils;
@@ -69,6 +70,10 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public ActivateUserResponse activateUser(ActivateUserRequest request) {
+        // 1. ADIM: Önce masaya yumruğu vuruyoruz: Admin misin?
+        checkAdminAuthority();
+
+        // 2. ADIM: İşlemlere devam
         Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
 
         if (optionalUser.isEmpty()) {
@@ -89,18 +94,17 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public InActiveUserResponse inActiveUser(InActiveUserRequest request){
+        checkAdminAuthority();
 
-        //Find User
+        // 2. ADIM: Kullanıcıyı bul
         Optional<User> optionalUser = userRepository.findByEmail(request.getEmail());
 
-        // İf not found throw exception
         if (optionalUser.isEmpty()) {
             throw new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, request.getEmail()));
         }
 
-
         User dbUser = optionalUser.get();
-        dbUser.setActive(false);
+        dbUser.setActive(false); // Pasif yapma işlemi
         dbUser.setUpdatedAt(new Date());
         userRepository.save(dbUser);
 
@@ -110,6 +114,19 @@ public class UserServiceImpl implements IUserService {
         return response;
     }
 
+    private void checkAdminAuthority() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BaseException(new ErrorMessage(MessageType.UNAUTHORIZED, "Giriş yapmanız gerekiyor!"));
+        }
+
+        User currentUser = (User) authentication.getPrincipal();
+
+        if (!currentUser.getUserType().equals(UserType.ADMIN)) {
+            throw new BaseException(new ErrorMessage(MessageType.ACCESS_DENIED, "Bu işlem için ADMIN yetkisi gerekiyor!"));
+        }
+    }
 
     @Override
     public UserDto getMyProfile() {

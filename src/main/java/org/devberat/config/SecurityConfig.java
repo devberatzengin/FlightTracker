@@ -55,10 +55,13 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // "Expected 1 argument" hatasını bu çözer
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/rest/api/auth/**").permitAll() // Login/Register herkese açık
-                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/activate/**").hasAuthority("ADMIN") // Sadece Admin
-                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/deactivate/**").hasAuthority("ADMIN") // Sadece Admin
-                        .anyRequest().authenticated() // Diğer her şey için token şart
+                        .requestMatchers("/rest/api/auth/**").permitAll()
+
+                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/activate/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/deactivate/**").hasAuthority("ADMIN")
+
+                        .requestMatchers("/rest/api/user/me").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // "Expected 1 argument" hatasını bu da çözer
                 .authenticationProvider(authenticationProvider())
