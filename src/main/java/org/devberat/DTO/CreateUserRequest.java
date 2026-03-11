@@ -25,6 +25,10 @@ public class CreateUserRequest {
     @NotBlank(message = "Last name cannot be blank")
     private String lastName;
 
+    @NotBlank(message = "Password cannot be blank")
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String password;
+
     @NotBlank(message = "Email cannot be blank")
     @Email(message = "Please provide a valid email address")
     private String email;

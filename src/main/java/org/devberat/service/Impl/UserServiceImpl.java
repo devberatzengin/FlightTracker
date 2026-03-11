@@ -9,6 +9,7 @@ import org.devberat.repository.IUserRepository;
 import org.devberat.service.IUserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.Optional;
@@ -18,6 +19,9 @@ public class UserServiceImpl implements IUserService {
 
     @Autowired
     private IUserRepository userRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     private Long findUserByEmail(String userEmail){
         if (userEmail == null) {
@@ -33,6 +37,9 @@ public class UserServiceImpl implements IUserService {
         CreateUserResponse response = new CreateUserResponse();
         User saveUser = new User();
         BeanUtils.copyProperties(request, saveUser);
+
+        saveUser.setPassword(passwordEncoder.encode(request.getPassword()));
+
         saveUser.setActive(true);
         saveUser.setCreatedAt(new Date());
         saveUser.setUpdatedAt(new Date());
@@ -44,7 +51,6 @@ public class UserServiceImpl implements IUserService {
         }
         return response;
     }
-
 
     @Override
     public ActivateUserResponse activateUser(ActivateUserRequest request) {
