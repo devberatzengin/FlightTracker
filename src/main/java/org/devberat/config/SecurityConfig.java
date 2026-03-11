@@ -1,5 +1,6 @@
 package org.devberat.config;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import lombok.RequiredArgsConstructor;
 import org.devberat.repository.IUserRepository;
@@ -54,8 +55,10 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // "Expected 1 argument" hatasını bu çözer
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/rest/api/auth/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/rest/api/auth/**").permitAll() // Login/Register herkese açık
+                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/activate/**").hasAuthority("ADMIN") // Sadece Admin
+                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/deactivate/**").hasAuthority("ADMIN") // Sadece Admin
+                        .anyRequest().authenticated() // Diğer her şey için token şart
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // "Expected 1 argument" hatasını bu da çözer
                 .authenticationProvider(authenticationProvider())
