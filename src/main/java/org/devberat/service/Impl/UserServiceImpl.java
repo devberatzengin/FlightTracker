@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserServiceImpl implements IUserService {
@@ -23,7 +24,7 @@ public class UserServiceImpl implements IUserService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    private Long findUserByEmail(String userEmail){
+    private UUID findUserByEmail(String userEmail){
         if (userEmail == null) {
             return null;
         }
