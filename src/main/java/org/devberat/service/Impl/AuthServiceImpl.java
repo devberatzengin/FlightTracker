@@ -1,7 +1,6 @@
 package org.devberat.service.Impl;
 
-import org.devberat.DTO.AuthRequest;
-import org.devberat.DTO.AuthResponse;
+import org.devberat.DTO.AuthDto;
 import org.devberat.repository.IUserRepository;
 import org.devberat.service.IAuthService;
 import org.devberat.security.JwtService;
@@ -20,20 +19,15 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtService jwtService;
 
     @Override
-    public AuthResponse login(AuthRequest request) {
-        //Email ve Password Check
+    public AuthDto.Response login(AuthDto.Request request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // If Check successful get user
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
-
-        // Create token
         var token = jwtService.generateToken(user);
 
-        // return token
-        return AuthResponse.builder()
+        return AuthDto.Response.builder()
                 .token(token)
                 .email(user.getEmail())
                 .build();

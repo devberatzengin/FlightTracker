@@ -1,9 +1,7 @@
 package org.devberat.controller.Impl;
 
-import org.devberat.DTO.AuthRequest;
-import org.devberat.DTO.AuthResponse;
-import org.devberat.DTO.CreateUserRequest;
-import org.devberat.DTO.CreateUserResponse;
+import org.devberat.DTO.AuthDto;
+import org.devberat.DTO.UserDto;
 import org.devberat.model.RootEntity;
 import org.devberat.service.IAuthService;
 import org.devberat.service.IUserService;
@@ -24,12 +22,12 @@ public class AuthController extends RestBaseController {
     private final IUserService userService;
 
     @PostMapping("/register")
-    public RootEntity<CreateUserResponse> register(@Valid @RequestBody CreateUserRequest request) {
+    public RootEntity<UserDto.CreateResponse> register(@Valid @RequestBody UserDto.CreateRequest request) {
         return ok(userService.saveUser(request));
     }
 
     @PostMapping("/login")
-    public RootEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
+    public RootEntity<AuthDto.Response> login(@Valid @RequestBody AuthDto.Request request) {
         return ok(authService.login(request));
     }
 }

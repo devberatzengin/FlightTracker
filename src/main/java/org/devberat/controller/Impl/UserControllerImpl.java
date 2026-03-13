@@ -1,7 +1,7 @@
 package org.devberat.controller.Impl;
 
 import jakarta.validation.Valid;
-import org.devberat.DTO.*;
+import org.devberat.DTO.UserDto;
 import org.devberat.model.RootEntity;
 import org.devberat.service.IUserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,29 +11,29 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/rest/api/user")
 public class UserControllerImpl extends RestBaseController {
+
     @Autowired
     private IUserService userService;
 
-    // Post's
+    // Post Methods
     @PostMapping("/save")
-    public RootEntity<CreateUserResponse> saveUser(@Valid @RequestBody CreateUserRequest request) {
+    public RootEntity<UserDto.CreateResponse> saveUser(@Valid @RequestBody UserDto.CreateRequest request) {
         return ok(userService.saveUser(request));
     }
 
     @PostMapping("/activate")
-    public RootEntity<ActivateUserResponse> activateUser(@Valid @RequestBody ActivateUserRequest request) {
+    public RootEntity<UserDto.StatusResponse> activateUser(@Valid @RequestBody UserDto.StatusChangeRequest request) {
         return ok(userService.activateUser(request));
     }
 
     @PostMapping("/deactivate")
-    public RootEntity<InActiveUserResponse> deactivateUser(@Valid @RequestBody InActiveUserRequest request){
+    public RootEntity<UserDto.StatusResponse> deactivateUser(@Valid @RequestBody UserDto.StatusChangeRequest request){
         return ok(userService.inActiveUser(request));
     }
 
-
-    // Get's
+    // Get Methods
     @GetMapping("/me")
-    public ResponseEntity<UserDto> getMyProfile() {
+    public ResponseEntity<UserDto.Info> getMyProfile() {
         return ResponseEntity.ok(userService.getMyProfile());
     }
 }

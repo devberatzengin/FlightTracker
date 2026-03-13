@@ -1,15 +1,14 @@
 package org.devberat.service;
 
-import org.devberat.DTO.*;
+import org.devberat.DTO.UserDto;
 
 public interface IUserService {
 
-    CreateUserResponse saveUser(CreateUserRequest request);
+    UserDto.CreateResponse saveUser(UserDto.CreateRequest request);
 
-    InActiveUserResponse inActiveUser(InActiveUserRequest request);
+    UserDto.StatusResponse inActiveUser(UserDto.StatusChangeRequest request);
 
-    ActivateUserResponse activateUser(ActivateUserRequest request);
+    UserDto.StatusResponse activateUser(UserDto.StatusChangeRequest request);
 
-    UserDto getMyProfile();
-
+    UserDto.Info getMyProfile();
 }

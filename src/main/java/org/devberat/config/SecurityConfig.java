@@ -53,20 +53,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // "Expected 1 argument" hatasını bu çözer
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/rest/api/auth/**").permitAll()
+                        .requestMatchers("/rest/api/auth/**").permitAll() // Login/Register allowed
 
-                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/activate/**").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/rest/api/user/deactivate/**").hasAuthority("ADMIN")
+                        // Admin account required
+                        .requestMatchers("/rest/api/user/activate/**", "/rest/api/user/deactivate/**").hasAuthority("ADMIN")
 
-                        .requestMatchers("/rest/api/user/me").authenticated()
+                        // Login required
+                        .requestMatchers("/rest/api/user/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // "Expected 1 argument" hatasını bu da çözer
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 }

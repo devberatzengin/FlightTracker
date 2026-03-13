@@ -4,17 +4,60 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.devberat.model.UserType;
 import java.util.UUID;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class UserDto {
-    private UUID id;
-    private String firstName;
-    private String lastName;
-    private String email;
-    private String phoneNumber;
-    private String userType;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Info {
+        private UUID id;
+        private String firstName;
+        private String lastName;
+        private String email;
+        private String phoneNumber;
+        private UserType userType;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateRequest {
+        private String firstName;
+        private String lastName;
+        private String email;
+        private String password;
+        private String phoneNumber;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CreateResponse {
+        private UUID id;
+        private String firstName;
+        private String lastName;
+        private String email;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StatusChangeRequest {
+        private String email;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StatusResponse {
+        private UUID id;
+        private boolean active;
+    }
 }
