@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Flight Tracker Final API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        { "name": "Register", "request": { "method": "POST", "url": "http://localhost:8080/rest/api/auth/register", "body": { "mode": "raw", "raw": "{\"firstName\":\"Berat\",\"lastName\":\"Zengin\",\"email\":\"admin@gmail.com\",\"password\":\"12345\",\"phoneNumber\":\"0555\"}", "options": {"raw": {"language": "json"}}} } },
+        { "name": "Login", "request": { "method": "POST", "url": "http://localhost:8080/rest/api/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"admin@gmail.com\",\"password\":\"12345\"}", "options": {"raw": {"language": "json"}}} } }
+      ]
+    },
+    {
+      "name": "Airport",
+      "item": [
+        { "name": "Create Airport", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/airport/create", "body": { "mode": "raw", "raw": "{\"iataCode\":\"IST\",\"name\":\"Istanbul Airport\",\"city\":\"Istanbul\",\"county\":\"Turkey\"}", "options": {"raw": {"language": "json"}}} } },
+        { "name": "List Airports", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/airport/list" } },
+        { "name": "Get Airport By ID", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/airport/{{airport_id}}" } },
+        { "name": "Delete Airport", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/airport/delete/{{airport_id}}" } }
+      ]
+    },
+    {
+      "name": "Aircraft",
+      "item": [
+        { "name": "Create Aircraft", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/aircraft/create", "body": { "mode": "raw", "raw": "{\"model\":\"Boeing 737\",\"serialNumber\":\"TC-JYP\",\"seatCapacity\":189}", "options": {"raw": {"language": "json"}}} } },
+        { "name": "List Aircrafts", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/aircraft/list" } },
+        { "name": "Delete Aircraft", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/aircraft/delete/{{aircraft_id}}" } }
+      ]
+    },
+    {
+      "name": "Flight",
+      "item": [
+        { "name": "Create Flight", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/flight/create", "body": { "mode": "raw", "raw": "{\"flightNumber\":\"TK1903\",\"departureAirportIata\":\"IST\",\"arrivalAirportIata\":\"JFK\",\"aircraftSerialNumber\":\"TC-JYP\",\"departureTime\":\"2026-06-15T10:00:00\",\"arrivalTime\":\"2026-06-15T22:00:00\"}", "options": {"raw": {"language": "json"}}} } },
+        { "name": "Update Status", "request": { "method": "PUT", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/flight/update-status/{{flight_id}}?status=IN_AIR" } },
+        { "name": "Assign Captain", "request": { "method": "PUT", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/flight/{{flight_id}}/assign-captain/{{captain_id}}" } },
+        { "name": "List Flights", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/flight/list" } }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        { "name": "Get Me", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/user/me" } },
+        { "name": "Activate User", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/user/activate", "body": { "mode": "raw", "raw": "{\"email\":\"passenger@gmail.com\"}", "options": {"raw": {"language": "json"}}} } }
+      ]
+    }
+  ]
+}
