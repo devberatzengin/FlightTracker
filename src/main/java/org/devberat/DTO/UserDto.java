@@ -1,5 +1,6 @@
 package org.devberat.DTO;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,6 +41,7 @@ public class UserDto {
     @AllArgsConstructor
     public static class CreateResponse {
         private UUID id;
+        @NotNull(message = "User type cannot be null")
         private String firstName;
         private String lastName;
         private String email;

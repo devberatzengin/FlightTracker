@@ -57,6 +57,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/rest/api/auth/**").permitAll() // Login/Register allowed
 
+
+                        // Flight Opr
+                        .requestMatchers(HttpMethod.POST, "/rest/api/flight/create").hasAnyAuthority("ADMIN", "TOWER")
+                        .requestMatchers(HttpMethod.DELETE, "/rest/api/flight/delete/**").hasAnyAuthority("ADMIN", "TOWER")
+                        .requestMatchers(HttpMethod.GET, "/rest/api/flight/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/rest/api/flight/update-status/**").hasAnyAuthority("ADMIN", "TOWER")
+                        .requestMatchers(HttpMethod.GET, "/rest/api/airport/**").authenticated()
+                        .requestMatchers("/rest/api/airport/create", "/rest/api/airport/delete/**").hasAuthority("ADMIN")
+                        .requestMatchers("/rest/api/aircraft/create", "/rest/api/aircraft/delete/**").hasAuthority("ADMIN")
+
                         // Admin account required
                         .requestMatchers("/rest/api/user/activate/**", "/rest/api/user/deactivate/**").hasAuthority("ADMIN")
 

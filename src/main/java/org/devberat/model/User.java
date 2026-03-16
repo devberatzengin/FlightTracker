@@ -1,6 +1,10 @@
 package org.devberat.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,22 +30,41 @@ public class User implements UserDetails {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @NotEmpty
+    @NotBlank
+    @NotNull
     @Column(name = "user_type")
     @Enumerated(EnumType.STRING)
     private UserType userType;
 
+    @NotEmpty
+    @NotBlank
+    @NotNull
     @Column(name = "first_name", nullable = false)
     private String firstName;
 
+    @NotEmpty
+    @NotBlank
+    @NotNull
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @NotEmpty
+    @NotBlank
+    @NotNull
+    @Email
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
+    @NotEmpty
+    @NotBlank
+    @NotNull
     @Column(name = "password", nullable = false)
     private String password;
 
+    @NotEmpty
+    @NotBlank
+    @NotNull
     @Column(name = "phone_number", unique = true, nullable = false)
     private String phoneNumber;
 
