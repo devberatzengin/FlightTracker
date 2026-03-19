@@ -73,6 +73,10 @@ public class SecurityConfig {
                         // Login required
                         .requestMatchers("/rest/api/user/**").authenticated()
 
+                        // Ticket
+                        .requestMatchers("/rest/api/ticket/book").hasAuthority("PASSENGER")
+                        .requestMatchers("/rest/api/ticket/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
