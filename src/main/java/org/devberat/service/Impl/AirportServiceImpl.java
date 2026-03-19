@@ -32,7 +32,7 @@ public class AirportServiceImpl implements IAirportService {
         airport.setIataCode(request.getIataCode().toUpperCase());
         airport.setName(request.getName());
         airport.setCity(request.getCity());
-        airport.setCountry(request.getCounty());
+        airport.setCountry(request.getCountry());
         airport.setActive(true);
         return convertToDto(airportRepository.save(airport));
     }
@@ -71,7 +71,7 @@ public class AirportServiceImpl implements IAirportService {
                 .iataCode(airport.getIataCode())
                 .name(airport.getName())
                 .city(airport.getCity())
-                .county(airport.getCountry())
+                .country(airport.getCountry())
                 .isActive(airport.isActive())
                 .build();
     }

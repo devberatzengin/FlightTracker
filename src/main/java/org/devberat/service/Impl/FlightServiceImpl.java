@@ -15,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -47,16 +48,18 @@ public class FlightServiceImpl implements IFlightService {
         return convertToDto(flightRepository.save(flight));
     }
 
-    @Override
-    public FlightDto.Info createFlight(FlightDto.CreateRequest request) {
-        checkFlightAuthority();
 
-        //Time check
+    @Override
+    @Transactional
+    public FlightDto.Info createFlight(FlightDto.CreateRequest request) {
+        checkFlightAuthority(); // Check Auth
+
+        // Check Time
         if (request.getArrivalTime().isBefore(request.getDepartureTime())) {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Arrival time cannot be earlier than departure time."));
         }
 
-        //Conflict check
+        // Check aircraft availability
         boolean isBusy = flightRepository.isAircraftBusy(
                 request.getAircraftSerialNumber(),
                 request.getDepartureTime(),
@@ -67,7 +70,6 @@ public class FlightServiceImpl implements IFlightService {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION,
                     "The aircraft is already scheduled for another flight during this time interval."));
         }
-
 
         Airport departureAirport = airportRepository.findByIataCode(request.getDepartureAirportIata())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Departure airport not found.")));
@@ -80,10 +82,24 @@ public class FlightServiceImpl implements IFlightService {
 
         Flight flight = new Flight();
 
+        // Update captain
         if (request.getCaptainId() != null) {
             User captain = userRepository.findById(request.getCaptainId())
                     .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Captain not found")));
+
+            if (captain.getUserType() != UserType.CAPTAIN) {
+                throw new BaseException(new ErrorMessage(MessageType.USER_ROLE_ERROR, "The selected user is not a CAPTAIN."));
+            }
             flight.setCaptain(captain);
+        } else {
+            List<User> availableCaptains = userRepository.findAvailableCaptains(
+                    request.getDepartureTime(),
+                    request.getArrivalTime()
+            );
+
+            if (!availableCaptains.isEmpty()) {
+                flight.setCaptain(availableCaptains.get(0));
+            }
         }
 
         flight.setFlightNumber(request.getFlightNumber());
@@ -93,10 +109,10 @@ public class FlightServiceImpl implements IFlightService {
         flight.setDepartureTime(request.getDepartureTime());
         flight.setArrivalTime(request.getArrivalTime());
         flight.setStatus(FlightStatus.SCHEDULED);
+        flight.setCurrentOccupancy(0);
 
         return convertToDto(flightRepository.save(flight));
     }
-
     @Override
     public List<FlightDto.Info> getAllFlights() {
         return flightRepository.findAll().stream()
@@ -146,15 +162,17 @@ public class FlightServiceImpl implements IFlightService {
 
     private FlightDto.Info convertToDto(Flight flight) {
         return FlightDto.Info.builder()
-                .captainFullName(flight.getCaptain() != null ? flight.getCaptain().getFirstName() + " " + flight.getCaptain().getLastName() : "Not Assigned")
                 .id(flight.getId())
                 .flightNumber(flight.getFlightNumber())
                 .departureAirportName(flight.getDepartureAirport().getName())
                 .arrivalAirportName(flight.getArrivalAirport().getName())
                 .aircraftModel(flight.getAircraft().getModel())
+                .captainFullName(flight.getCaptain() != null ?
+                        flight.getCaptain().getFirstName() + " " + flight.getCaptain().getLastName() : "Not Assigned")
                 .status(flight.getStatus())
                 .departureTime(flight.getDepartureTime())
                 .arrivalTime(flight.getArrivalTime())
+                .currentOccupancy(flight.getCurrentOccupancy())
                 .build();
     }
 }
