@@ -14,6 +14,8 @@ public class FlightDto {
 
     @Data
     @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class CreateRequest {
         @NotBlank(message = "Flight number is required")
         private String flightNumber;
@@ -46,6 +48,7 @@ public class FlightDto {
         private String arrivalAirportName;
         private String aircraftModel;
         private String captainFullName;
+        private Integer currentOccupancy;
         private FlightStatus status;
         private LocalDateTime departureTime;
         private LocalDateTime arrivalTime;

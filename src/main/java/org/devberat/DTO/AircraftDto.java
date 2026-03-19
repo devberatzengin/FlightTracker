@@ -2,14 +2,18 @@ package org.devberat.DTO;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 public class AircraftDto {
     @Data
     @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Request {
         @NotBlank(message = "Model is required")
         private String model;
@@ -21,6 +25,8 @@ public class AircraftDto {
 
     @Data
     @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Info {
         private UUID id;
         private String model;
