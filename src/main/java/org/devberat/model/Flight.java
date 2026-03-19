@@ -21,6 +21,9 @@ public class Flight {
     @Column(name = "flight_number", nullable = false, unique = true)
     private String flightNumber;
 
+    @Column(name = "current_occupancy")
+    private Integer currentOccupancy = 0;
+
     @ManyToOne
     @JoinColumn(name = "departure_airport_id", nullable = false)
     private Airport departureAirport;
