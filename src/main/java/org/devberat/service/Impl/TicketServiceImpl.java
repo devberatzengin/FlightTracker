@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -24,33 +25,56 @@ public class TicketServiceImpl implements ITicketService {
     private final ITicketRepository ticketRepository;
     private final IFlightRepository flightRepository;
 
+    private java.math.BigDecimal calculateCurrentPrice(Flight flight) {
+        double occupancyRate = (double) flight.getCurrentOccupancy() / flight.getAircraft().getSeatCapacity();
+        java.math.BigDecimal currentPrice = flight.getBasePrice();
+
+        // Occupancy factor for pricing
+        if (occupancyRate > 0.9) {
+            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(1.5)); // %90 dolulukta fiyatı %50 artır
+        } else if (occupancyRate > 0.7) {
+            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(1.3)); // %70 dolulukta fiyatı %30 artır
+        } else if (occupancyRate > 0.5) {
+            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(1.1)); // %50 dolulukta fiyatı %10 artır
+        }
+
+        // Last minute discount
+        // Last 24H and aircraft has less than %20 occupancy then make  %20 discount.
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (flight.getDepartureTime().isBefore(now.plusDays(1)) && occupancyRate < 0.2) {
+            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(0.8));
+        }
+
+        return currentPrice;
+    }
+
     @Override
     @Transactional
     public TicketDto.Info bookTicket(TicketDto.BookingRequest request) {
+
         User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Flight flight = flightRepository.findById(request.getFlightId())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Flight not found")));
 
-        // Check availability
         if (flight.getCurrentOccupancy() >= flight.getAircraft().getSeatCapacity()) {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Flight is full!"));
         }
 
-        // Check for booking
         if (ticketRepository.existsByFlightIdAndSeatNumberAndStatus(flight.getId(), request.getSeatNumber(), TicketStatus.ACTIVE)) {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Seat " + request.getSeatNumber() + " is already taken!"));
         }
 
-        // Create ticket
+        BigDecimal finalPrice = calculateCurrentPrice(flight);
+
         Ticket ticket = new Ticket();
         ticket.setFlight(flight);
         ticket.setPassenger(currentUser);
         ticket.setSeatNumber(request.getSeatNumber());
+        ticket.setPrice(finalPrice);
         ticket.setStatus(TicketStatus.ACTIVE);
-        ticket.setCreatedAt(new Date());
+        ticket.setCreatedAt(new java.util.Date());
 
-        // Update occupancy
         flight.setCurrentOccupancy(flight.getCurrentOccupancy() + 1);
         flightRepository.save(flight);
 

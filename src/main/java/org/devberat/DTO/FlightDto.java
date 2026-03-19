@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.devberat.model.FlightStatus;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -28,6 +30,8 @@ public class FlightDto {
 
         @NotBlank(message = "Aircraft serial number is required")
         private String aircraftSerialNumber;
+
+        private BigDecimal basePrice;
 
         private UUID captainId;
 

@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.devberat.model.TicketStatus;
+
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public class TicketDto {
@@ -24,6 +26,7 @@ public class TicketDto {
     @AllArgsConstructor
     public static class Info {
         private UUID id;
+        private BigDecimal price;
         private String flightNumber;
         private String passengerName;
         private String seatNumber;

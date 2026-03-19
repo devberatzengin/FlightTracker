@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,6 +25,9 @@ public class Flight {
 
     @Column(name = "current_occupancy")
     private Integer currentOccupancy = 0;
+
+    @Column(name = "base_price")
+    private BigDecimal basePrice;
 
     @ManyToOne
     @JoinColumn(name = "departure_airport_id", nullable = false)
