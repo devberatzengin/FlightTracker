@@ -40,6 +40,7 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -55,28 +56,36 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/rest/api/auth/**").permitAll() // Login/Register allowed
 
+                        // Public
+                        .requestMatchers("/rest/api/auth/**").permitAll()
 
-                        // Flight Opr
+                        // Flight
                         .requestMatchers(HttpMethod.POST, "/rest/api/flight/create").hasAnyAuthority("ADMIN", "TOWER")
-                        .requestMatchers(HttpMethod.DELETE, "/rest/api/flight/delete/**").hasAnyAuthority("ADMIN", "TOWER")
-                        .requestMatchers(HttpMethod.GET, "/rest/api/flight/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/rest/api/flight/update-status/**").hasAnyAuthority("ADMIN", "TOWER")
-                        .requestMatchers(HttpMethod.GET, "/rest/api/airport/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/rest/api/flight/*/assign-captain/*").hasAnyAuthority("ADMIN", "TOWER")
+                        .requestMatchers(HttpMethod.DELETE, "/rest/api/flight/delete/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/rest/api/flight/list", "/rest/api/flight/*").authenticated() // Visible for everyone
+
+                        // Airport
+                        .requestMatchers(HttpMethod.GET, "/rest/api/airport/list", "/rest/api/airport/*").authenticated()
                         .requestMatchers("/rest/api/airport/create", "/rest/api/airport/delete/**").hasAuthority("ADMIN")
+
+                        // Aircraft
+                        .requestMatchers(HttpMethod.GET, "/rest/api/aircraft/list", "/rest/api/aircraft/*").hasAnyAuthority("ADMIN", "TOWER", "CAPTAIN")
                         .requestMatchers("/rest/api/aircraft/create", "/rest/api/aircraft/delete/**").hasAuthority("ADMIN")
 
-                        // Admin account required
-                        .requestMatchers("/rest/api/user/activate/**", "/rest/api/user/deactivate/**").hasAuthority("ADMIN")
-
-                        // Login required
-                        .requestMatchers("/rest/api/user/**").authenticated()
-
                         // Ticket
-                        .requestMatchers("/rest/api/ticket/book").hasAuthority("PASSENGER")
-                        .requestMatchers("/rest/api/ticket/**").authenticated()
+                        .requestMatchers("/rest/api/ticket/book").hasAuthority("PASSENGER") // Only Passenger buy ticket
+                        .requestMatchers("/rest/api/ticket/my-tickets").hasAuthority("PASSENGER") // My tickets
+                        .requestMatchers("/rest/api/ticket/cancel/**").hasAnyAuthority("PASSENGER", "ADMIN")
 
+                        // User
+                        .requestMatchers("/rest/api/user/me").authenticated()
+                        .requestMatchers("/rest/api/user/activate/**", "/rest/api/user/deactivate/**").hasAuthority("ADMIN")
+                        .requestMatchers("/rest/api/user/save").hasAuthority("ADMIN")
+
+                        // Auth needed for anything else
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -85,5 +94,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 }
