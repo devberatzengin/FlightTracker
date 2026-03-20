@@ -1,48 +1,151 @@
 {
   "info": {
-    "name": "Flight Tracker Final API",
+    "name": "Flight Tracker System",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Auth",
+      "name": "1. Authentication & Identity",
       "item": [
-        { "name": "Register", "request": { "method": "POST", "url": "http://localhost:8080/rest/api/auth/register", "body": { "mode": "raw", "raw": "{\"firstName\":\"Berat\",\"lastName\":\"Zengin\",\"email\":\"admin@gmail.com\",\"password\":\"12345\",\"phoneNumber\":\"0555\"}", "options": {"raw": {"language": "json"}}} } },
-        { "name": "Login", "request": { "method": "POST", "url": "http://localhost:8080/rest/api/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"admin@gmail.com\",\"password\":\"12345\"}", "options": {"raw": {"language": "json"}}} } }
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"Berat\",\n    \"lastName\": \"Zengin\",\n    \"email\": \"admin@flight.com\",\n    \"password\": \"12345\",\n    \"phoneNumber\": \"05551112233\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "http://localhost:8080/rest/api/auth/register"
+          }
+        },
+        {
+          "name": "Login (Sets Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if(jsonData.result) { pm.environment.set(\"token\", jsonData.data.token); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@flight.com\",\n    \"password\": \"12345\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "http://localhost:8080/rest/api/auth/login"
+          }
+        }
       ]
     },
     {
-      "name": "Airport",
+      "name": "2. User Management (Admin Only)",
       "item": [
-        { "name": "Create Airport", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/airport/create", "body": { "mode": "raw", "raw": "{\"iataCode\":\"IST\",\"name\":\"Istanbul Airport\",\"city\":\"Istanbul\",\"county\":\"Turkey\"}", "options": {"raw": {"language": "json"}}} } },
-        { "name": "List Airports", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/airport/list" } },
-        { "name": "Get Airport By ID", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/airport/{{airport_id}}" } },
-        { "name": "Delete Airport", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/airport/delete/{{airport_id}}" } }
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": "http://localhost:8080/rest/api/user/me"
+          }
+        },
+        {
+          "name": "Save New User (Manual)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"firstName\": \"New\",\n    \"lastName\": \"User\",\n    \"email\": \"newuser@flight.com\",\n    \"password\": \"password123\",\n    \"phoneNumber\": \"05000000000\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "http://localhost:8080/rest/api/user/save"
+          }
+        },
+        {
+          "name": "Activate User",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"target@flight.com\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "http://localhost:8080/rest/api/user/activate"
+          }
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"target@flight.com\"}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "http://localhost:8080/rest/api/user/deactivate"
+          }
+        }
       ]
     },
     {
-      "name": "Aircraft",
+      "name": "3. Aircraft Operations",
       "item": [
-        { "name": "Create Aircraft", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/aircraft/create", "body": { "mode": "raw", "raw": "{\"model\":\"Boeing 737\",\"serialNumber\":\"TC-JYP\",\"seatCapacity\":189}", "options": {"raw": {"language": "json"}}} } },
-        { "name": "List Aircrafts", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/aircraft/list" } },
-        { "name": "Delete Aircraft", "request": { "method": "DELETE", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/aircraft/delete/{{aircraft_id}}" } }
+        { "name": "Create Aircraft", "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\"model\": \"Airbus A320\", \"serialNumber\": \"TC-XYZ\", \"seatCapacity\": 150}", "options": { "raw": { "language": "json" } } }, "url": "http://localhost:8080/rest/api/aircraft/create" } },
+        { "name": "List Aircrafts", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/aircraft/list" } },
+        { "name": "Get Aircraft By ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/aircraft/{{aircraft_id}}" } },
+        { "name": "DELETE Aircraft", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/aircraft/delete/{{aircraft_id}}" } }
       ]
     },
     {
-      "name": "Flight",
+      "name": "4. Airport Operations",
       "item": [
-        { "name": "Create Flight", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/flight/create", "body": { "mode": "raw", "raw": "{\"flightNumber\":\"TK1903\",\"departureAirportIata\":\"IST\",\"arrivalAirportIata\":\"JFK\",\"aircraftSerialNumber\":\"TC-JYP\",\"departureTime\":\"2026-06-15T10:00:00\",\"arrivalTime\":\"2026-06-15T22:00:00\"}", "options": {"raw": {"language": "json"}}} } },
-        { "name": "Update Status", "request": { "method": "PUT", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/flight/update-status/{{flight_id}}?status=IN_AIR" } },
-        { "name": "Assign Captain", "request": { "method": "PUT", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/flight/{{flight_id}}/assign-captain/{{captain_id}}" } },
-        { "name": "List Flights", "request": { "method": "GET", "url": "http://localhost:8080/rest/api/flight/list" } }
+        { "name": "Create Airport", "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\"iataCode\": \"JFK\", \"name\": \"John F. Kennedy\", \"city\": \"New York\", \"country\": \"USA\"}", "options": { "raw": { "language": "json" } } }, "url": "http://localhost:8080/rest/api/airport/create" } },
+        { "name": "List Airports", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/airport/list" } },
+        { "name": "Get Airport By ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/airport/{{airport_id}}" } },
+        { "name": "DELETE Airport", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/airport/delete/{{airport_id}}" } }
       ]
     },
     {
-      "name": "User",
+      "name": "5. Flight Control",
       "item": [
-        { "name": "Get Me", "request": { "method": "GET", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/user/me" } },
-        { "name": "Activate User", "request": { "method": "POST", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}], "url": "http://localhost:8080/rest/api/user/activate", "body": { "mode": "raw", "raw": "{\"email\":\"passenger@gmail.com\"}", "options": {"raw": {"language": "json"}}} } }
+        { "name": "Create Flight", "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\"flightNumber\": \"TK101\", \"departureAirportIata\": \"IST\", \"arrivalAirportIata\": \"JFK\", \"aircraftSerialNumber\": \"TC-XYZ\", \"departureTime\": \"2026-06-15T10:00:00\", \"arrivalTime\": \"2026-06-15T22:00:00\"}", "options": { "raw": { "language": "json" } } }, "url": "http://localhost:8080/rest/api/flight/create" } },
+        { "name": "List Flights", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/flight/list" } },
+        { "name": "Get Flight By ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/flight/{{flight_id}}" } },
+        { "name": "Update Status", "request": { "method": "PUT", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/flight/update-status/{{flight_id}}?status=IN_AIR" } },
+        { "name": "Assign Captain", "request": { "method": "PUT", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/flight/{{flight_id}}/assign-captain/{{captain_id}}" } },
+        { "name": "DELETE Flight", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/flight/delete/{{flight_id}}" } }
+      ]
+    },
+    {
+      "name": "6. Ticket & Seat Services",
+      "item": [
+        { "name": "Get Seat Map", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/ticket/flight/{{flight_id}}/seats" } },
+        { "name": "Book Ticket", "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\"flightId\": \"{{flight_id}}\", \"seatNumber\": \"10A\"}", "options": { "raw": { "language": "json" } } }, "url": "http://localhost:8080/rest/api/ticket/book" } },
+        { "name": "Check-in (PNR)", "request": { "method": "POST", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/ticket/check-in/{{pnr_code}}" } },
+        { "name": "My Tickets", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/ticket/my-tickets" } },
+        { "name": "Cancel Ticket", "request": { "method": "PUT", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": "http://localhost:8080/rest/api/ticket/cancel/{{ticket_id}}" } }
       ]
     }
+  ],
+  "variable": [
+    { "key": "token", "value": "" },
+    { "key": "flight_id", "value": "" },
+    { "key": "pnr_code", "value": "" },
+    { "key": "captain_id", "value": "" },
+    { "key": "aircraft_id", "value": "" },
+    { "key": "airport_id", "value": "" },
+    { "key": "ticket_id", "value": "" }
   ]
 }
