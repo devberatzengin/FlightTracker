@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +26,16 @@ public class TicketServiceImpl implements ITicketService {
 
     private final ITicketRepository ticketRepository;
     private final IFlightRepository flightRepository;
+
+    private String generateUniquePnr() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder pnr = new StringBuilder();
+        SecureRandom random = new SecureRandom();
+        for (int i = 0; i < 6; i++) {
+            pnr.append(characters.charAt(random.nextInt(characters.length())));
+        }
+        return pnr.toString();
+    }
 
     private java.math.BigDecimal calculateCurrentPrice(Flight flight) {
         double occupancyRate = (double) flight.getCurrentOccupancy() / flight.getAircraft().getSeatCapacity();
@@ -68,6 +80,8 @@ public class TicketServiceImpl implements ITicketService {
         BigDecimal finalPrice = calculateCurrentPrice(flight);
 
         Ticket ticket = new Ticket();
+        ticket.setPnrCode(generateUniquePnr());
+        ticket.setCheckedIn(false);
         ticket.setFlight(flight);
         ticket.setPassenger(currentUser);
         ticket.setSeatNumber(request.getSeatNumber());
@@ -80,6 +94,27 @@ public class TicketServiceImpl implements ITicketService {
 
         Ticket saved = ticketRepository.save(ticket);
         return convertToDto(saved);
+    }
+
+
+    @Override
+    @Transactional
+    public void checkIn(String pnrCode) {
+        Ticket ticket = ticketRepository.findByPnrCode(pnrCode)
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "PNR not found")));
+
+        if (ticket.isCheckedIn()) {
+            throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Already checked in!"));
+        }
+
+        // Checking for last 24 hours.
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(ticket.getFlight().getDepartureTime().minusDays(1))) {
+            throw new BaseException(new ErrorMessage(MessageType.TIME_ERROR, "Check-in opens 24 hours before departure."));
+        }
+
+        ticket.setCheckedIn(true);
+        ticketRepository.save(ticket);
     }
 
     @Override

@@ -8,4 +8,6 @@ public interface ITicketService {
     TicketDto.Info bookTicket(TicketDto.BookingRequest request);
     void cancelTicket(UUID ticketId);
     List<TicketDto.Info> getMyTickets();
+
+    public void checkIn(String pnrCode);
 }
