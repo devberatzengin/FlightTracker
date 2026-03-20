@@ -1,19 +1,18 @@
 package org.devberat.controller.Impl;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.devberat.DTO.UserDto;
 import org.devberat.model.RootEntity;
 import org.devberat.service.IUserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/rest/api/user")
+@RequiredArgsConstructor
 public class UserControllerImpl extends RestBaseController {
 
-    @Autowired
-    private IUserService userService;
+    private final IUserService userService;
 
     // Post Methods
     @PostMapping("/save")
@@ -33,7 +32,7 @@ public class UserControllerImpl extends RestBaseController {
 
     // Get Methods
     @GetMapping("/me")
-    public ResponseEntity<UserDto.Info> getMyProfile() {
-        return ResponseEntity.ok(userService.getMyProfile());
+    public RootEntity<UserDto.Info> getMyProfile() {
+        return ok(userService.getMyProfile());
     }
 }

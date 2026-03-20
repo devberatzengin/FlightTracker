@@ -76,8 +76,8 @@ public class SecurityConfig {
                         .requestMatchers("/rest/api/aircraft/create", "/rest/api/aircraft/delete/**").hasAuthority("ADMIN")
 
                         // Ticket
-                        .requestMatchers("/rest/api/ticket/book").hasAuthority("PASSENGER") // Only Passenger buy ticket
-                        .requestMatchers("/rest/api/ticket/my-tickets").hasAuthority("PASSENGER") // My tickets
+                        .requestMatchers("/rest/api/ticket/book").hasAnyAuthority("PASSENGER", "ADMIN") 
+                        .requestMatchers("/rest/api/ticket/my-tickets").hasAnyAuthority("PASSENGER", "ADMIN") 
                         .requestMatchers("/rest/api/ticket/cancel/**").hasAnyAuthority("PASSENGER", "ADMIN")
 
                         // User

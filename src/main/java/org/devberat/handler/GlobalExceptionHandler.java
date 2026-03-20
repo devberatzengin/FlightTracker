@@ -64,8 +64,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(java.lang.Exception.class)
     public ResponseEntity<ApiError<String>> handleGeneralException(java.lang.Exception ex, WebRequest request) {
+        String fullMessage = ex.getMessage();
+        if (ex.getCause() != null) {
+            fullMessage += " [Cause: " + ex.getCause().getMessage() + "]";
+            if (ex.getCause().getCause() != null) {
+                fullMessage += " [Root Cause: " + ex.getCause().getCause().getMessage() + "]";
+            }
+        }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createApiError("An unexpected system error occurred: " + ex.getMessage(), request));
+                .body(createApiError("An unexpected system error occurred: " + fullMessage, request));
     }
     private <E> ApiError<E> createApiError(E message, WebRequest request) {
         ApiError<E> apiError = new ApiError<>();
