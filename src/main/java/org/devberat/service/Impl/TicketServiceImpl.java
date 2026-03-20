@@ -1,6 +1,7 @@
 package org.devberat.service.Impl;
 
 import lombok.RequiredArgsConstructor;
+import org.devberat.DTO.SeatMapDto;
 import org.devberat.DTO.TicketDto;
 import org.devberat.exception.BaseException;
 import org.devberat.exception.ErrorMessage;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +60,32 @@ public class TicketServiceImpl implements ITicketService {
         }
 
         return currentPrice;
+    }
+
+    @Override
+    public List<SeatMapDto.SeatInfo> getSeatMap(UUID flightId) {
+        Flight flight = flightRepository.findById(flightId)
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Flight not found")));
+
+        int capacity = flight.getAircraft().getSeatCapacity();
+        List<String> occupiedSeats = ticketRepository.findByFlightIdAndStatus(flightId, TicketStatus.ACTIVE)
+                .stream().map(Ticket::getSeatNumber).toList();
+
+        List<SeatMapDto.SeatInfo> seatMap = new ArrayList<>();
+        char[] rows = {'A', 'B', 'C', 'D', 'E', 'F'};
+
+        for (int i = 1; i <= (capacity / 6) + 1; i++) {
+            for (char row : rows) {
+                if (seatMap.size() < capacity) {
+                    String seatNum = i + String.valueOf(row);
+                    seatMap.add(SeatMapDto.SeatInfo.builder()
+                            .seatNumber(seatNum)
+                            .isAvailable(!occupiedSeats.contains(seatNum))
+                            .build());
+                }
+            }
+        }
+        return seatMap;
     }
 
     @Override

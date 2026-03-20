@@ -1,6 +1,7 @@
 package org.devberat.controller.Impl;
 
 import lombok.RequiredArgsConstructor;
+import org.devberat.DTO.SeatMapDto;
 import org.devberat.DTO.TicketDto;
 import org.devberat.model.RootEntity;
 import org.devberat.service.ITicketService;
@@ -30,6 +31,11 @@ public class TicketController extends RestBaseController {
     public RootEntity<String> checkIn(@PathVariable String pnrCode) {
         ticketService.checkIn(pnrCode);
         return ok("Check-in successful! Have a nice flight.");
+    }
+
+    @GetMapping("/flight/{flightId}/seats")
+    public RootEntity<List<SeatMapDto.SeatInfo>> getSeatMap(@PathVariable UUID flightId) {
+        return ok(ticketService.getSeatMap(flightId)); //
     }
 
     @PutMapping("/cancel/{id}")
