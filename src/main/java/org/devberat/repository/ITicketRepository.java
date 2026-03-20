@@ -1,6 +1,7 @@
 package org.devberat.repository;
 
 import org.devberat.model.Ticket;
+import org.devberat.model.TicketStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
@@ -11,5 +12,7 @@ public interface ITicketRepository extends JpaRepository<Ticket, UUID> {
     boolean existsByFlightIdAndSeatNumberAndStatus(UUID flightId, String seatNumber, org.devberat.model.TicketStatus status);
 
     Optional<Ticket> findByPnrCode(String pnrCode);
+
+    List<Ticket> findByFlightIdAndStatus(UUID flightId, TicketStatus status);
 
 }
