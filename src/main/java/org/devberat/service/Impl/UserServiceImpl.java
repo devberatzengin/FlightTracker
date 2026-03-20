@@ -1,35 +1,34 @@
 package org.devberat.service.Impl;
 
+import lombok.RequiredArgsConstructor;
 import org.devberat.DTO.UserDto;
 import org.devberat.exception.BaseException;
 import org.devberat.exception.ErrorMessage;
 import org.devberat.exception.MessageType;
 import org.devberat.model.User;
+import org.devberat.model.UserType;
 import org.devberat.repository.IUserRepository;
+import org.devberat.service.ISecurityService;
 import org.devberat.service.IUserService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Date;
-import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
 
-    @Autowired
-    private IUserRepository userRepository;
-
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private final IUserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final ISecurityService securityService;
 
     @Override
     public UserDto.CreateResponse saveUser(UserDto.CreateRequest request) {
         User saveUser = new User();
         BeanUtils.copyProperties(request, saveUser);
         saveUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        saveUser.setUserType(UserType.PASSENGER); // Default role
         saveUser.setActive(true);
         saveUser.setCreatedAt(new Date());
         saveUser.setUpdatedAt(new Date());
@@ -46,10 +45,10 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public UserDto.StatusResponse activateUser(UserDto.StatusChangeRequest request) {
-        checkAdminAuthority();
+        securityService.checkAuthority(UserType.ADMIN);
 
         User dbUser = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, request.getEmail())));
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "User not found with email: " + request.getEmail())));
 
         dbUser.setActive(true);
         dbUser.setUpdatedAt(new Date());
@@ -63,10 +62,10 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public UserDto.StatusResponse inActiveUser(UserDto.StatusChangeRequest request) {
-        checkAdminAuthority();
+        securityService.checkAuthority(UserType.ADMIN);
 
         User dbUser = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, request.getEmail())));
+                .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "User not found with email: " + request.getEmail())));
 
         dbUser.setActive(false);
         dbUser.setUpdatedAt(new Date());
@@ -80,17 +79,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public UserDto.Info getMyProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-
-        return UserDto.Info.builder()
-                .id(currentUser.getId())
-                .firstName(currentUser.getFirstName())
-                .lastName(currentUser.getLastName())
-                .email(currentUser.getEmail())
-                .phoneNumber(currentUser.getPhoneNumber())
-                .userType(currentUser.getUserType())
-                .build();
+        return convertToDto(securityService.getCurrentUser());
     }
 
     // Helpers
@@ -103,20 +92,8 @@ public class UserServiceImpl implements IUserService {
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .userType(user.getUserType())
+                .balance(user.getBalance())
+                .miles(user.getMiles())
                 .build();
-    }
-
-    private void checkAdminAuthority() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new BaseException(new ErrorMessage(MessageType.UNAUTHORIZED, "Authentication required!"));
-        }
-
-        User currentUser = (User) authentication.getPrincipal();
-
-        if (!org.devberat.model.UserType.ADMIN.equals(currentUser.getUserType())) {
-            throw new BaseException(new ErrorMessage(MessageType.ACCESS_DENIED, "This operation requires ADMIN authority!"));
-        }
     }
 }

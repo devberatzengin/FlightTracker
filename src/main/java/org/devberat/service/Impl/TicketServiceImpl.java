@@ -9,16 +9,17 @@ import org.devberat.exception.MessageType;
 import org.devberat.model.*;
 import org.devberat.repository.IFlightRepository;
 import org.devberat.repository.ITicketRepository;
+import org.devberat.repository.IUserRepository;
+import org.devberat.service.IPnrService;
+import org.devberat.service.IPricingService;
+import org.devberat.service.ISecurityService;
 import org.devberat.service.ITicketService;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,39 +29,13 @@ public class TicketServiceImpl implements ITicketService {
 
     private final ITicketRepository ticketRepository;
     private final IFlightRepository flightRepository;
+    private final IUserRepository userRepository;
+    private final NotificationService notificationService;
+    private final IPricingService pricingService;
+    private final IPnrService pnrService;
+    private final ISecurityService securityService;
 
-    private String generateUniquePnr() {
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        StringBuilder pnr = new StringBuilder();
-        SecureRandom random = new SecureRandom();
-        for (int i = 0; i < 6; i++) {
-            pnr.append(characters.charAt(random.nextInt(characters.length())));
-        }
-        return pnr.toString();
-    }
-
-    private java.math.BigDecimal calculateCurrentPrice(Flight flight) {
-        double occupancyRate = (double) flight.getCurrentOccupancy() / flight.getAircraft().getSeatCapacity();
-        java.math.BigDecimal currentPrice = flight.getBasePrice();
-
-        // Occupancy factor for pricing
-        if (occupancyRate > 0.9) {
-            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(1.5)); // %90 dolulukta fiyatı %50 artır
-        } else if (occupancyRate > 0.7) {
-            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(1.3)); // %70 dolulukta fiyatı %30 artır
-        } else if (occupancyRate > 0.5) {
-            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(1.1)); // %50 dolulukta fiyatı %10 artır
-        }
-
-        // Last minute discount
-        // Last 24H and aircraft has less than %20 occupancy then make  %20 discount.
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        if (flight.getDepartureTime().isBefore(now.plusDays(1)) && occupancyRate < 0.2) {
-            currentPrice = currentPrice.multiply(java.math.BigDecimal.valueOf(0.8));
-        }
-
-        return currentPrice;
-    }
+    // PNR and Pricing logic moved to dedicated services.
 
     @Override
     public List<SeatMapDto.SeatInfo> getSeatMap(UUID flightId) {
@@ -91,13 +66,12 @@ public class TicketServiceImpl implements ITicketService {
     @Override
     @Transactional
     public TicketDto.Info bookTicket(TicketDto.BookingRequest request) {
-
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User currentUser = securityService.getCurrentUser();
 
         Flight flight = flightRepository.findById(request.getFlightId())
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Flight not found")));
 
-        if (flight.getCurrentOccupancy() >= flight.getAircraft().getSeatCapacity()) {
+        if (flight.isFull()) {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Flight is full!"));
         }
 
@@ -105,10 +79,24 @@ public class TicketServiceImpl implements ITicketService {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Seat " + request.getSeatNumber() + " is already taken!"));
         }
 
-        BigDecimal finalPrice = calculateCurrentPrice(flight);
+        BigDecimal finalPrice = pricingService.calculatePrice(flight);
+
+        if (request.isUseWallet()) {
+            try {
+                currentUser.chargeBalance(finalPrice);
+            } catch (RuntimeException e) {
+                throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, 
+                    "Insufficient wallet balance! Required: $" + finalPrice + ", Available: $" + (currentUser.getBalance() != null ? currentUser.getBalance() : "0")));
+            }
+        }
+
+        // Feature 2: SkyMiles Reward (Gain 10% of price as miles)
+        int earnedMiles = finalPrice.divide(new BigDecimal("10"), 0, java.math.RoundingMode.FLOOR).intValue();
+        currentUser.addMiles(earnedMiles);
+        userRepository.save(currentUser);
 
         Ticket ticket = new Ticket();
-        ticket.setPnrCode(generateUniquePnr());
+        ticket.setPnrCode(pnrService.generatePnr());
         ticket.setCheckedIn(false);
         ticket.setFlight(flight);
         ticket.setPassenger(currentUser);
@@ -117,10 +105,15 @@ public class TicketServiceImpl implements ITicketService {
         ticket.setStatus(TicketStatus.ACTIVE);
         ticket.setCreatedAt(new java.util.Date());
 
-        flight.setCurrentOccupancy(flight.getCurrentOccupancy() + 1);
+        flight.incrementOccupancy();
         flightRepository.save(flight);
 
         Ticket saved = ticketRepository.save(ticket);
+
+        notificationService.sendNotification(currentUser, 
+            "Sky journey booked! Flight: " + flight.getFlightNumber() + " to " + flight.getArrivalAirport().getName(), 
+            "FLIGHT_BOOKED");
+
         return convertToDto(saved);
     }
 
@@ -135,26 +128,27 @@ public class TicketServiceImpl implements ITicketService {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Already checked in!"));
         }
 
-        // Checking for last 24 hours.
+        // Relaxed for testing: allow check-in anytime before departure.
         LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(ticket.getFlight().getDepartureTime().minusDays(1))) {
-            throw new BaseException(new ErrorMessage(MessageType.TIME_ERROR, "Check-in opens 24 hours before departure."));
+        if (now.isAfter(ticket.getFlight().getDepartureTime())) {
+            throw new BaseException(new ErrorMessage(MessageType.TIME_ERROR, "Flight has already departed."));
         }
 
         ticket.setCheckedIn(true);
         ticketRepository.save(ticket);
+
+        notificationService.sendNotification(ticket.getPassenger(), 
+            "Boarding pass ready! You are checked in for flight " + ticket.getFlight().getFlightNumber(), 
+            "CHECK_IN");
     }
 
     @Override
     @Transactional
     public void cancelTicket(UUID ticketId) {
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Ticket not found")));
 
-        if (!currentUser.getUserType().equals(UserType.ADMIN) &&
-                !ticket.getPassenger().getId().equals(currentUser.getId())) {
+        if (!securityService.hasRole(UserType.ADMIN) && !securityService.isCurrentUser(ticket.getPassenger())) {
             throw new BaseException(new ErrorMessage(MessageType.ACCESS_DENIED, "You can only cancel your own tickets!"));
         }
 
@@ -164,15 +158,28 @@ public class TicketServiceImpl implements ITicketService {
 
         ticket.setStatus(TicketStatus.CANCELLED);
         Flight flight = ticket.getFlight();
-        flight.setCurrentOccupancy(flight.getCurrentOccupancy() - 1);
+        flight.decrementOccupancy();
 
+        // Refund to SkyWallet
+        User passenger = ticket.getPassenger();
+        passenger.refundBalance(ticket.getPrice());
+        
+        // Reverse Miles (10% of price)
+        int milesToReverse = ticket.getPrice().divide(new BigDecimal("10"), 0, java.math.RoundingMode.FLOOR).intValue();
+        passenger.reverseMiles(milesToReverse);
+
+        userRepository.save(passenger);
         flightRepository.save(flight);
         ticketRepository.save(ticket);
+
+        notificationService.sendNotification(passenger, 
+            "Ticket cancelled for flight " + ticket.getFlight().getFlightNumber() + ". Your SkyWallet has been credited (if applicable).", 
+            "FLIGHT_CANCELLED");
     }
 
     @Override
     public List<TicketDto.Info> getMyTickets() {
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User currentUser = securityService.getCurrentUser();
         return ticketRepository.findByPassengerId(currentUser.getId()).stream()
                 .map(this::convertToDto).toList();
     }
@@ -180,9 +187,16 @@ public class TicketServiceImpl implements ITicketService {
     private TicketDto.Info convertToDto(Ticket ticket) {
         return TicketDto.Info.builder()
                 .id(ticket.getId())
+                .price(ticket.getPrice())
                 .flightNumber(ticket.getFlight().getFlightNumber())
                 .passengerName(ticket.getPassenger().getFirstName() + " " + ticket.getPassenger().getLastName())
+                .departureCity(ticket.getFlight().getDepartureAirport().getCity())
+                .arrivalCity(ticket.getFlight().getArrivalAirport().getCity())
+                .departureTime(ticket.getFlight().getDepartureTime().toString())
+                .arrivalTime(ticket.getFlight().getArrivalTime().toString())
                 .seatNumber(ticket.getSeatNumber())
+                .pnrCode(ticket.getPnrCode())
+                .isCheckedIn(ticket.isCheckedIn())
                 .status(ticket.getStatus())
                 .build();
     }

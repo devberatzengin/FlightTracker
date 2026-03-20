@@ -6,12 +6,10 @@ import org.devberat.exception.BaseException;
 import org.devberat.exception.ErrorMessage;
 import org.devberat.exception.MessageType;
 import org.devberat.model.Airport;
-import org.devberat.model.User;
 import org.devberat.model.UserType;
 import org.devberat.repository.IAirportRepository;
 import org.devberat.service.IAirportService;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.devberat.service.ISecurityService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,10 +19,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AirportServiceImpl implements IAirportService {
     private final IAirportRepository airportRepository;
+    private final ISecurityService securityService;
 
     @Override
     public AirportDto.Info createAirport(AirportDto.Request request) {
-        checkAdminAuthority();
+        securityService.checkAuthority(UserType.ADMIN);
         if (airportRepository.findByIataCode(request.getIataCode()).isPresent()) {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Airport with this IATA code already exists"));
         }
@@ -51,19 +50,14 @@ public class AirportServiceImpl implements IAirportService {
 
     @Override
     public void deleteAirport(UUID id) {
-        checkAdminAuthority();
+        securityService.checkAuthority(UserType.ADMIN);
         if (!airportRepository.existsById(id)) {
             throw new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Airport not found with ID: " + id));
         }
         airportRepository.deleteById(id);
     }
 
-    private void checkAdminAuthority() {
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (currentUser.getUserType() != UserType.ADMIN) {
-            throw new AccessDeniedException("Only ADMIN can perform this operation");
-        }
-    }
+    // Authority checks moved to securityService.
 
     private AirportDto.Info convertToDto(Airport airport) {
         return AirportDto.Info.builder()

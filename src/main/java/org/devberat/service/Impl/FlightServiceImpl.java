@@ -11,9 +11,7 @@ import org.devberat.repository.IAirportRepository;
 import org.devberat.repository.IFlightRepository;
 import org.devberat.repository.IUserRepository;
 import org.devberat.service.IFlightService;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.devberat.service.ISecurityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,10 +27,11 @@ public class FlightServiceImpl implements IFlightService {
     private final IAirportRepository airportRepository;
     private final IAircraftRepository aircraftRepository;
     private final IUserRepository userRepository;
+    private final ISecurityService securityService;
 
     @Override
     public FlightDto.Info assignCaptain(UUID flightId, UUID captainId) {
-        checkFlightAuthority();
+        securityService.checkAuthority(UserType.ADMIN, UserType.TOWER);
 
         Flight flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Flight not found.")));
@@ -52,7 +51,7 @@ public class FlightServiceImpl implements IFlightService {
     @Override
     @Transactional
     public FlightDto.Info createFlight(FlightDto.CreateRequest request) {
-        checkFlightAuthority(); // Check Auth
+        securityService.checkAuthority(UserType.ADMIN, UserType.TOWER); // Check Auth
 
         // Check Time
         if (request.getArrivalTime().isBefore(request.getDepartureTime())) {
@@ -108,6 +107,7 @@ public class FlightServiceImpl implements IFlightService {
         flight.setAircraft(aircraft);
         flight.setDepartureTime(request.getDepartureTime());
         flight.setArrivalTime(request.getArrivalTime());
+        flight.setBasePrice(request.getBasePrice());
         flight.setStatus(FlightStatus.SCHEDULED);
         flight.setCurrentOccupancy(0);
 
@@ -132,7 +132,7 @@ public class FlightServiceImpl implements IFlightService {
         Flight flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Flight not found")));
 
-        checkFlightAuthority();
+        securityService.checkAuthority(UserType.ADMIN, UserType.TOWER);
 
         if (flight.getStatus() == FlightStatus.LANDED) {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Cannot change status of a landed flight"));
@@ -144,21 +144,14 @@ public class FlightServiceImpl implements IFlightService {
 
     @Override
     public void deleteFlight(UUID id) {
-        checkFlightAuthority();
+        securityService.checkAuthority(UserType.ADMIN);
         if (!flightRepository.existsById(id)) {
             throw new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Flight not found with ID: " + id));
         }
         flightRepository.deleteById(id);
     }
 
-    private void checkFlightAuthority() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-
-        if (!(currentUser.getUserType() == UserType.ADMIN || currentUser.getUserType() == UserType.TOWER)) {
-            throw new AccessDeniedException("Access Denied: You must be an ADMIN or TOWER to perform this operation.");
-        }
-    }
+    // Authority checks moved to securityService.
 
     private FlightDto.Info convertToDto(Flight flight) {
         return FlightDto.Info.builder()
@@ -172,6 +165,7 @@ public class FlightServiceImpl implements IFlightService {
                 .status(flight.getStatus())
                 .departureTime(flight.getDepartureTime())
                 .arrivalTime(flight.getArrivalTime())
+                .basePrice(flight.getBasePrice())
                 .currentOccupancy(flight.getCurrentOccupancy())
                 .build();
     }

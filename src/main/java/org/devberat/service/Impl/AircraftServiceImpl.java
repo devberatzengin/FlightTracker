@@ -6,12 +6,10 @@ import org.devberat.exception.BaseException;
 import org.devberat.exception.ErrorMessage;
 import org.devberat.exception.MessageType;
 import org.devberat.model.Aircraft;
-import org.devberat.model.User;
 import org.devberat.model.UserType;
 import org.devberat.repository.IAircraftRepository;
 import org.devberat.service.IAircraftService;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.devberat.service.ISecurityService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,10 +19,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AircraftServiceImpl implements  IAircraftService{
     private final IAircraftRepository aircraftRepository;
+    private final ISecurityService securityService;
 
     @Override
     public AircraftDto.Info createAircraft(AircraftDto.Request request) {
-        checkAdminAuthority();
+        securityService.checkAuthority(UserType.ADMIN);
         if (aircraftRepository.findBySerialNumber(request.getSerialNumber()).isPresent()) {
             throw new BaseException(new ErrorMessage(MessageType.GENERAL_EXCEPTION, "Aircraft with this serial number already exists"));
         }
@@ -51,19 +50,14 @@ public class AircraftServiceImpl implements  IAircraftService{
 
     @Override
     public void deleteAircraft(UUID id) {
-        checkAdminAuthority();
+        securityService.checkAuthority(UserType.ADMIN);
         if (!aircraftRepository.existsById(id)) {
             throw new BaseException(new ErrorMessage(MessageType.NO_RECORD_EXIST, "Aircraft not found with ID: " + id));
         }
         aircraftRepository.deleteById(id);
     }
 
-    private void checkAdminAuthority() {
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (currentUser.getUserType() != UserType.ADMIN) {
-            throw new AccessDeniedException("Only ADMIN can modify aircraft data");
-        }
-    }
+    // Authority checks moved to securityService.
 
     private AircraftDto.Info convertToDto(Aircraft aircraft) {
         return AircraftDto.Info.builder()
