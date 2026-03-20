@@ -58,4 +58,27 @@ public class Flight {
 
     @Column(name = "arrival_time")
     private LocalDateTime arrivalTime;
+
+    // Business Logic Methods
+
+    public void incrementOccupancy() {
+        if (this.currentOccupancy == null) this.currentOccupancy = 0;
+        if (isFull()) {
+            throw new RuntimeException("Flight is already full");
+        }
+        this.currentOccupancy++;
+    }
+
+    public void decrementOccupancy() {
+        if (this.currentOccupancy == null || this.currentOccupancy <= 0) {
+            this.currentOccupancy = 0;
+            return;
+        }
+        this.currentOccupancy--;
+    }
+
+    public boolean isFull() {
+        if (this.aircraft == null) return false;
+        return this.currentOccupancy >= this.aircraft.getSeatCapacity();
+    }
 }

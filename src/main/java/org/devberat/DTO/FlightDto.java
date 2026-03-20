@@ -54,6 +54,7 @@ public class FlightDto {
         private String captainFullName;
         private Integer currentOccupancy;
         private FlightStatus status;
+        private BigDecimal basePrice;
         private LocalDateTime departureTime;
         private LocalDateTime arrivalTime;
     }

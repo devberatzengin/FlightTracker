@@ -30,8 +30,6 @@ public class User implements UserDetails {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @NotEmpty
-    @NotBlank
     @NotNull
     @Column(name = "user_type")
     @Enumerated(EnumType.STRING)
@@ -77,6 +75,12 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private Date updatedAt;
 
+    @Column(name = "balance")
+    private java.math.BigDecimal balance = java.math.BigDecimal.ZERO;
+
+    @Column(name = "miles")
+    private Integer miles = 0;
+
     //UserDetails Methods
 
     @Override
@@ -120,5 +124,30 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         // If user active then can log in.
         return isActive;
+    }
+
+    // Business Logic Methods
+
+    public void chargeBalance(java.math.BigDecimal amount) {
+        if (this.balance == null) this.balance = java.math.BigDecimal.ZERO;
+        if (this.balance.compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient balance");
+        }
+        this.balance = this.balance.subtract(amount);
+    }
+
+    public void refundBalance(java.math.BigDecimal amount) {
+        if (this.balance == null) this.balance = java.math.BigDecimal.ZERO;
+        this.balance = this.balance.add(amount);
+    }
+
+    public void addMiles(int milesToAdd) {
+        if (this.miles == null) this.miles = 0;
+        this.miles += milesToAdd;
+    }
+
+    public void reverseMiles(int milesToRemove) {
+        if (this.miles == null) this.miles = 0;
+        this.miles = Math.max(0, this.miles - milesToRemove);
     }
 }

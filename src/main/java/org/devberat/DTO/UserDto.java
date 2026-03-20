@@ -21,6 +21,8 @@ public class UserDto {
         private String email;
         private String phoneNumber;
         private UserType userType;
+        private java.math.BigDecimal balance;
+        private Integer miles;
     }
 
     @Data

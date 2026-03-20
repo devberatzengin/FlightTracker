@@ -18,6 +18,7 @@ public class TicketDto {
     public static class BookingRequest {
         private UUID flightId;
         private String seatNumber;
+        private boolean useWallet;
     }
 
     @Data
@@ -29,9 +30,16 @@ public class TicketDto {
         private BigDecimal price;
         private String flightNumber;
         private String passengerName;
+        private String departureCity;
+        private String arrivalCity;
+        private String departureTime;
+        private String arrivalTime;
         private String seatNumber;
         private String pnrCode;
+        
+        @com.fasterxml.jackson.annotation.JsonProperty("isCheckedIn")
         private boolean isCheckedIn;
+        
         private TicketStatus status;
     }
 }
