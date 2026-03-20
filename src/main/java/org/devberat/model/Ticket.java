@@ -27,6 +27,12 @@ public class Ticket {
     @JoinColumn(name = "passenger_id", nullable = false)
     private User passenger;
 
+    @Column(name = "pnr_code", unique = true, nullable = false)
+    private String pnrCode;
+
+    @Column(name = "is_checked_in")
+    private boolean isCheckedIn = false;
+
     @Column(name = "seat_number", nullable = false)
     private String seatNumber;
 

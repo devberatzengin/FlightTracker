@@ -30,6 +30,8 @@ public class TicketDto {
         private String flightNumber;
         private String passengerName;
         private String seatNumber;
+        private String pnrCode;
+        private boolean isCheckedIn;
         private TicketStatus status;
     }
 }
