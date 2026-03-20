@@ -1,4 +1,4 @@
-# Flight Tracker System (Backend) ️🛫
+# Flight Tracker System ️🛫
 
 Welcome to the backend architecture of the **Flight Tracker System**! This repository hosts a robust, scalable, and SOLID-compliant API designed for flight tracking, booking management, and SkyWallet financial operations.
 
