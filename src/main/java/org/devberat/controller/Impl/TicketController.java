@@ -26,6 +26,12 @@ public class TicketController extends RestBaseController {
         return ok(ticketService.getMyTickets());
     }
 
+    @PostMapping("/check-in/{pnrCode}")
+    public RootEntity<String> checkIn(@PathVariable String pnrCode) {
+        ticketService.checkIn(pnrCode);
+        return ok("Check-in successful! Have a nice flight.");
+    }
+
     @PutMapping("/cancel/{id}")
     public RootEntity<Void> cancel(@PathVariable UUID id) {
         ticketService.cancelTicket(id);
